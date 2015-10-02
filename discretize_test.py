@@ -53,7 +53,7 @@ def build_track_rewards():
 
 
 def fillknn(cluster,tracklist,agent):
-	track_knn = {}
+	global track_knn1,track_knn2
 	#print cluster
 	tree = spatial.KDTree(cluster)
 	for i in range(len(cluster)):
@@ -77,10 +77,12 @@ def calc_trackReward(v,sub_list,e): #e is not the same for agent1 and agent2
 
 def totalPairReward():
 	a1a2reward_dict = create_empty_rewardpair_dict()
+	a2a1reward_dict = create_empty_rewardpair_dict()
 	for i in range(N):
 		for j in range(N):
-			a1a2reward_dict[i][j] = calculate_pair_reward(i,j)
-	return a1a2reward_dict
+			a1a2reward_dict[i][j] = calculate_pair_reward(i,j,1)
+			a2a1reward_dict[i][j] = calculate_pair_reward(i,j,2)
+	return a1a2reward_dict,a2a1reward_dict
 
 def create_empty_rewardpair_dict():
 	x = {}
@@ -93,25 +95,36 @@ def create_empty_rewardpair_dict():
 
 
 #modification
-def calculate_pair_reward(i,j):
-	global agent1_dict, agent2_dict 
+def calculate_pair_reward(i,j,agent):
+	global agent1_dict, agent2_dict,track_rewards1,track_rewards2,track_knn1,track_knn2 
 	cluster_reward_list = []
 	value = 0
 	intersum = 0
 	cluster_knnset = set([])
 	not_in_knnset_sum = 0
-	for t in agent1_dict[i]:
-		m_set = track_knn1[t]
-		inter = set(m_set).intersection(set(agent2_dict[j]))#mset does not contain concerned track
-		cluster_knnset = inter.union(cluster_knnset) #knn list for the cluster
-		if inter!=set([]):
-			for i in inter:
-				#should be track_rewards2[i]...the merit of the same track in agent2's cluster should be taken into account!
-				intersum += track_rewards2[i]
-				#intersum += track_rewards1[i]#accumulated m-set merit sum in Agent2 cluster
-	not_in_knnset = set(agent2_dict[j]).difference(cluster_knnset)
-	not_in_knnset_sum = sum(track_rewards2[i] for i in not_in_knnset)
-	value = intersum - (w*not_in_knnset_sum)
+	if(agent==1):
+		for t in agent1_dict[i]:
+			m_set = track_knn1[t]
+			inter = set(m_set).intersection(set(agent2_dict[j]))
+			cluster_knnset = inter.union(cluster_knnset) #knn list for the cluster
+			if inter!=set([]):
+				for i in inter:
+					intersum += track_rewards2[i]
+		not_in_knnset = set(agent2_dict[j]).difference(cluster_knnset)
+		not_in_knnset_sum = sum(track_rewards2[i] for i in not_in_knnset)
+		value = intersum - (w*not_in_knnset_sum)
+	else:
+		for t in agent2_dict[i]:
+			m_set = track_knn2[t]
+			inter = set(m_set).intersection(set(agent1_dict[j]))
+			cluster_knnset = inter.union(cluster_knnset) #knn list for the cluster
+			if inter!=set([]):
+				for i in inter:
+					intersum += track_rewards1[i]
+		not_in_knnset = set(agent1_dict[j]).difference(cluster_knnset)
+		not_in_knnset_sum = sum(track_rewards1[i] for i in not_in_knnset)
+		value = intersum - (w*not_in_knnset_sum)
+		
 	return value
 
 def biclustering(input,num_clusters):
