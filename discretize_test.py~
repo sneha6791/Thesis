@@ -174,7 +174,7 @@ def getMax(d):
 	for cnum,tracklist in agent1_dict.iteritems():
 		for t in tracklist:
 			print t,'\t',input_list[t],'\t',track_rewards1[t],'\t',track_knn1[t],'\t'
-		print '\n' '''
+		print '\n''''
 
 def main():
 	global input_list_disc,input_list,input_list2
