@@ -40,14 +40,16 @@ def build_track_rewards():
 		cluster_table1 = [input_list[t] for t in tracklist]
 		fillknn(cluster_table1,tracklist,1)#build knns--'update' works for non overlapping keys
 		for t in tracklist:
-			cluster_table1.remove(input_list[t])
-			track_rewards1[t] = calc_trackReward(input_list[t],cluster_table1,e1)
+			temp_table1 = copy.copy(cluster_table1)
+			temp_table1.remove(input_list[t])
+			track_rewards1[t] = calc_trackReward(input_list[t],temp_table1,e1)
 	for cnum,tracklist in agent2_dict.iteritems():
 		cluster_table2 = [input_list2[t] for t in tracklist]
 		fillknn(cluster_table2,tracklist,2)#build knns
 		for t in tracklist:
-			cluster_table2.remove(input_list2[t])
-			track_rewards2[t] = calc_trackReward(input_list2[t],cluster_table2,e2)
+			temp_table2 = copy.copy(cluster_table2)
+			temp_table2.remove(input_list2[t])
+			track_rewards2[t] = calc_trackReward(input_list2[t],temp_table2,e2)
 
 
 def fillknn(cluster,tracklist,agent):
@@ -57,8 +59,8 @@ def fillknn(cluster,tracklist,agent):
 	for i in range(len(cluster)):
 		pos = tree.query(cluster[i],k=m+1,p=2)[1] #p=2 rep Euclidean; m set to m+1 as knn list includes the query track
 		temp = list(pos) #unnecessarily redundant 'temp'
-		if i in temp:
-			temp.remove(i)
+		#if i in temp:
+		#	temp.remove(i)
 		if(agent==1):           
 			track_knn1[tracklist[i]] = [tracklist[p] for p in temp]
 		else:
@@ -100,7 +102,7 @@ def calculate_pair_reward(i,j):
 	not_in_knnset_sum = 0
 	for t in agent1_dict[i]:
 		m_set = track_knn1[t]
-		inter = set(m_set).intersection(set(agent2_dict[j]))
+		inter = set(m_set).intersection(set(agent2_dict[j]))#mset does not contain concerned track
 		cluster_knnset = inter.union(cluster_knnset) #knn list for the cluster
 		if inter!=set([]):
 			for i in inter:
@@ -108,7 +110,7 @@ def calculate_pair_reward(i,j):
 				intersum += track_rewards2[i]
 				#intersum += track_rewards1[i]#accumulated m-set merit sum in Agent2 cluster
 	not_in_knnset = set(agent2_dict[j]).difference(cluster_knnset)
-	not_in_knnset_sum = sum(track_rewards1[i] for i in not_in_knnset)
+	not_in_knnset_sum = sum(track_rewards2[i] for i in not_in_knnset)
 	value = intersum - (w*not_in_knnset_sum)
 	return value
 
